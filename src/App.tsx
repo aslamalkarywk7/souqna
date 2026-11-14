@@ -1,59 +1,87 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Store, LayoutDashboard, UserCircle, Package } from 'lucide-react';
-import Marketplace from './pages/Marketplace';
-import ProductDetails from './pages/ProductDetails';
-import Dashboard from './pages/Dashboard';
+import {Navigate, Route, Routes, useLocation} from 'react-router-dom';
+import Layout from '@/components/layout/Layout';
+import {useAuth} from '@/context/AuthContext';
+import AccountLayout from '@/pages/account/AccountLayout';
+import AdminLayout from '@/pages/admin/AdminLayout';
+import AdminCoupons from '@/pages/admin/AdminCoupons';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminOrders from '@/pages/admin/AdminOrders';
+import AdminProducts from '@/pages/admin/AdminProducts';
+import CartPage from '@/pages/CartPage';
+import CatalogPage from '@/pages/CatalogPage';
+import CheckoutPage from '@/pages/CheckoutPage';
+import HomePage from '@/pages/HomePage';
+import LoginPage from '@/pages/LoginPage';
+import NotFoundPage from '@/pages/NotFoundPage';
+import OrderDetailsPage from '@/pages/account/OrderDetailsPage';
+import OrdersPage from '@/pages/account/OrdersPage';
+import ProductPage from '@/pages/ProductPage';
+import ProfilePage from '@/pages/account/ProfilePage';
+import RegisterPage from '@/pages/RegisterPage';
+import WishlistPage from '@/pages/account/WishlistPage';
+import type {ReactNode} from 'react';
 
-function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-screen flex flex-col">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="bg-primary-600 text-white p-1.5 rounded-lg">
-                <Store className="w-5 h-5" />
-              </div>
-              <span className="font-bold text-xl tracking-tight text-slate-900">AI Market</span>
-            </div>
-            
-            <nav className="flex items-center space-x-6 text-sm font-medium text-slate-600">
-              <Link to="/" className="hover:text-primary-600 transition-colors flex items-center space-x-1">
-                <Package className="w-4 h-4" />
-                <span>Explore</span>
-              </Link>
-              <Link to="/dashboard" className="hover:text-primary-600 transition-colors flex items-center space-x-1">
-                <LayoutDashboard className="w-4 h-4" />
-                <span>Dashboard</span>
-              </Link>
-              <div className="h-6 w-px bg-slate-200"></div>
-              <button className="flex items-center space-x-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md transition-colors">
-                <UserCircle className="w-4 h-4" />
-                <span>Sign In</span>
-              </button>
-            </nav>
-          </div>
-        </div>
-      </header>
-      
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {children}
-      </main>
-    </div>
-  );
+function RequireAuth({children}: {children: ReactNode}) {
+  const {user, initializing} = useAuth();
+  const location = useLocation();
+  if (initializing) return null;
+  if (!user) return <Navigate to="/login" state={{from: location.pathname}} replace />;
+  return children;
+}
+
+function RequireAdmin({children}: {children: ReactNode}) {
+  const {user, initializing} = useAuth();
+  if (initializing) return null;
+  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
+  return children;
 }
 
 export default function App() {
   return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Marketplace />} />
-          <Route path="/product/:id" element={<ProductDetails />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-        </Routes>
-      </Layout>
-    </Router>
+    <Routes>
+      <Route element={<Layout />}>
+        <Route index element={<HomePage />} />
+        <Route path="products" element={<CatalogPage />} />
+        <Route path="products/:slug" element={<ProductPage />} />
+        <Route path="cart" element={<CartPage />} />
+        <Route
+          path="checkout"
+          element={
+            <RequireAuth>
+              <CheckoutPage />
+            </RequireAuth>
+          }
+        />
+        <Route path="login" element={<LoginPage />} />
+        <Route path="register" element={<RegisterPage />} />
+        <Route
+          path="account"
+          element={
+            <RequireAuth>
+              <AccountLayout />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<ProfilePage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          <Route path="orders/:orderNumber" element={<OrderDetailsPage />} />
+          <Route path="wishlist" element={<WishlistPage />} />
+        </Route>
+        <Route
+          path="admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+          <Route path="coupons" element={<AdminCoupons />} />
+        </Route>
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   );
 }

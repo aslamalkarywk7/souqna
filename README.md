@@ -136,7 +136,7 @@ All routes under `/api` — JSON in/out.
 ### Run
 
 ```bash
-git clone https://github.com/aslamalkarywk7/dfghjk.git souqna
+git clone https://github.com/aslamalkarywk7/souqna.git souqna
 cd souqna
 npm install
 npm run dev        # API :3001 + Vite :5173 (proxied) in one command
